@@ -33,19 +33,46 @@ const UploadIcon = () => (
   </svg>
 );
 
+const LoaderIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin-animation">
+    <line x1="12" y1="2" x2="12" y2="6"></line>
+    <line x1="12" y1="18" x2="12" y2="22"></line>
+    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+    <line x1="2" y1="12" x2="6" y2="12"></line>
+    <line x1="18" y1="12" x2="22" y2="12"></line>
+    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+  </svg>
+);
+
 function App() {
   const [activeTab, setActiveTab] = useState('problems');
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [submitStatus, setSubmitStatus] = useState(null);
+  
+  // State untuk Judging Simulator
+  const [isJudging, setIsJudging] = useState(false);
+  const [judgeProgress, setJudgeProgress] = useState('');
+  const [testResults, setTestResults] = useState([]);
+  const [finalScore, setFinalScore] = useState(null);
 
   const handleProblemClick = (problem) => {
     setSelectedProblem(problem);
-    setSubmitStatus(null);
+    resetJudgingState();
   };
 
   const handleBack = () => {
     setSelectedProblem(null);
+    resetJudgingState();
+  };
+
+  const resetJudgingState = () => {
     setSubmitStatus(null);
+    setIsJudging(false);
+    setJudgeProgress('');
+    setTestResults([]);
+    setFinalScore(null);
   };
 
   const handleFileUpload = (e) => {
@@ -60,10 +87,78 @@ function App() {
       return;
     }
 
-    setSubmitStatus({
-      type: 'success',
-      message: `Sukses! File ${file.name} telah diunggah menggunakan kompilator Scala versi terbaru (Scala 3.3+). Menunggu penjurian...`
-    });
+    // Memulai proses penjurian (simulasi)
+    resetJudgingState();
+    setIsJudging(true);
+    setJudgeProgress('Menunggu antrean server (Pending)...');
+
+    setTimeout(() => {
+      setJudgeProgress('Mengklarifikasi & Kompilasi kode Scala (Compiling)...');
+      
+      setTimeout(() => {
+        // Simulasi 10% kemungkinan Compile Error
+        if (Math.random() < 0.1) {
+          setIsJudging(false);
+          setSubmitStatus({ 
+            type: 'error', 
+            message: 'Compile Error: File .scala Anda memiliki kesalahan sintaks pada baris ke-4. Gagal di-kompilasi.' 
+          });
+          setFinalScore(0);
+          return;
+        }
+
+        setJudgeProgress('Menjalankan Test Case...');
+        let currentTest = 1;
+        const totalTests = 10;
+        let passed = 0;
+        let currentResults = [];
+
+        const testInterval = setInterval(() => {
+          if (currentTest > totalTests) {
+            clearInterval(testInterval);
+            setIsJudging(false);
+            const score = (passed / totalTests) * 100;
+            setFinalScore(score);
+            
+            if (score === 100) {
+              setSubmitStatus({ type: 'success', message: 'Tebaik! Jawaban Anda Benar (Accepted).' });
+            } else {
+              setSubmitStatus({ type: 'warning', message: `Penjurian Selesai. Masih ada test case yang gagal dilewati.` });
+            }
+            return;
+          }
+
+          setJudgeProgress(`Menjalankan Test Case #${currentTest}...`);
+          
+          // Simulasi Random Status
+          const rand = Math.random();
+          let status = 'Accepted';
+          let time = Math.floor(Math.random() * 50) + 10; // 10ms - 60ms
+          
+          if (rand > 0.85) {
+            status = 'Wrong Answer';
+          } else if (rand > 0.75) {
+            status = 'Time Limit Exceeded';
+            time = 2000; // TLE time
+          } else {
+            passed++;
+          }
+
+          currentResults.push({ id: currentTest, status, time: `${time} ms` });
+          setTestResults([...currentResults]);
+          
+          currentTest++;
+        }, 500); // 500ms per test case
+
+      }, 1500);
+    }, 1000);
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'Accepted') return 'var(--success)';
+    if (status === 'Wrong Answer') return 'var(--danger)';
+    if (status === 'Time Limit Exceeded') return 'var(--warning)';
+    return 'var(--text-secondary)';
   };
 
   return (
@@ -163,30 +258,63 @@ function App() {
                   <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
                     <h3 style={{ marginBottom: '1rem', color: 'var(--accent-primary)', fontSize: '1.1rem' }}>Submit Solusi (Scala)</h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                      Penting: File harus berekstensi .scala dan sistem kami menggunakan kompilator Scala versi terbaru (Scala 3).
+                      Penting: File harus berekstensi .scala. Sistem kami menggunakan kompilator Scala versi terbaru (Scala 3).
                     </p>
                     
                     <div className="submission-area">
                       <div className="file-input-wrapper">
-                        <button className="btn btn-primary" style={{ position: 'relative', zIndex: 1 }}>
-                          <UploadIcon /> Pilih File .scala
+                        <button className="btn btn-primary" style={{ position: 'relative', zIndex: 1 }} disabled={isJudging}>
+                          {isJudging ? <LoaderIcon /> : <UploadIcon />}
+                          {isJudging ? 'Sedang Diproses...' : 'Pilih File .scala'}
                         </button>
-                        <input type="file" accept=".scala" onChange={handleFileUpload} />
+                        <input type="file" accept=".scala" onChange={handleFileUpload} disabled={isJudging} />
                       </div>
                       <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Maksimal ukuran file: 1 MB</p>
                     </div>
 
-                    {submitStatus && (
-                      <div style={{
-                        marginTop: '1rem',
-                        padding: '1rem',
-                        borderRadius: 'var(--border-radius-sm)',
-                        backgroundColor: submitStatus.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        borderLeft: `4px solid var(--${submitStatus.type === 'success' ? 'success' : 'danger'})`,
-                        fontSize: '0.85rem',
-                        color: submitStatus.type === 'success' ? 'var(--success)' : 'var(--danger)'
-                      }}>
-                        {submitStatus.message}
+                    {/* Judgels Simulation UI */}
+                    {(isJudging || testResults.length > 0 || submitStatus) && (
+                      <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                        <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Status Penjurian:</h4>
+                        
+                        {isJudging && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--accent-primary)', marginBottom: '1rem' }}>
+                            <LoaderIcon /> {judgeProgress}
+                          </div>
+                        )}
+
+                        {testResults.length > 0 && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '1rem' }}>
+                            {testResults.map((tr) => (
+                              <div key={tr.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.3rem 0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                                <span>Test Case #{tr.id}</span>
+                                <div>
+                                  <span style={{ color: getStatusColor(tr.status), fontWeight: 'bold', marginRight: '1rem' }}>{tr.status}</span>
+                                  <span style={{ color: 'var(--text-secondary)' }}>{tr.time}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {finalScore !== null && (
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', margin: '1rem 0', color: finalScore === 100 ? 'var(--success)' : (finalScore > 0 ? 'var(--warning)' : 'var(--danger)') }}>
+                            Skor Akhir: {finalScore} / 100
+                          </div>
+                        )}
+
+                        {submitStatus && (
+                          <div style={{
+                            padding: '1rem',
+                            borderRadius: 'var(--border-radius-sm)',
+                            backgroundColor: submitStatus.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : (submitStatus.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'),
+                            borderLeft: `4px solid var(--${submitStatus.type === 'success' ? 'success' : (submitStatus.type === 'warning' ? 'warning' : 'danger')})`,
+                            fontSize: '0.85rem',
+                            color: submitStatus.type === 'success' ? 'var(--success)' : (submitStatus.type === 'warning' ? 'var(--warning)' : 'var(--danger)')
+                          }}>
+                            {submitStatus.message}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
