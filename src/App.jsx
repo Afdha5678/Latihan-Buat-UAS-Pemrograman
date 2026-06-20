@@ -57,6 +57,8 @@ function App() {
   const [testResults, setTestResults] = useState([]);
   const [finalScore, setFinalScore] = useState(null);
 
+  const fileInputRef = React.useRef(null);
+
   const handleProblemClick = (problem) => {
     setSelectedProblem(problem);
     resetJudgingState();
@@ -262,14 +264,14 @@ function App() {
                     </p>
                     
                     <div className="submission-area">
-                      <div className="file-input-wrapper">
-                        <button className="btn btn-primary" style={{ position: 'relative', zIndex: 1 }} disabled={isJudging}>
+                      <div>
+                        <button className="btn btn-primary" onClick={() => fileInputRef.current?.click()} disabled={isJudging}>
                           {isJudging ? <LoaderIcon /> : <UploadIcon />}
                           {isJudging ? 'Sedang Diproses...' : 'Pilih File .scala'}
                         </button>
-                        <input type="file" accept=".scala" onChange={handleFileUpload} disabled={isJudging} />
+                        <input type="file" accept=".scala" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileUpload} disabled={isJudging} />
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Maksimal ukuran file: 1 MB</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>Maksimal ukuran file: 1 MB</p>
                     </div>
 
                     {/* Judgels Simulation UI */}
