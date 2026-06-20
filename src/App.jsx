@@ -269,7 +269,7 @@ function App() {
                           {isJudging ? <LoaderIcon /> : <UploadIcon />}
                           {isJudging ? 'Sedang Diproses...' : 'Pilih File .scala'}
                         </button>
-                        <input type="file" accept=".scala" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileUpload} disabled={isJudging} />
+                        <input type="file" accept=".scala" style={{ display: 'none' }} ref={fileInputRef} onChange={handleFileUpload} onClick={(e) => { e.target.value = null; }} disabled={isJudging} />
                       </div>
                       <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>Maksimal ukuran file: 1 MB</p>
                     </div>
