@@ -199,7 +199,7 @@ function App() {
                       {selectedProblem.referenceMaterials.map((mat, idx) => (
                         <div key={idx} className="reference-card" style={{ marginTop: '0.5rem', marginBottom: 0, padding: '0.75rem' }}>
                           <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{mat.name}</span>
-                          <a href={`/materials/${encodeURIComponent(mat.name)}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem' }}>
+                          <a href={`${import.meta.env.BASE_URL}materials/${encodeURIComponent(mat.name)}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem' }}>
                             Buka Dokumen PDF <ExternalLinkIcon />
                           </a>
                         </div>
@@ -235,7 +235,7 @@ function App() {
                       </div>
                       <span style={{ fontWeight: 500 }}>{mat}</span>
                     </div>
-                    <a href={`/materials/${encodeURIComponent(mat)}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}>Buka PDF</a>
+                    <a href={`${import.meta.env.BASE_URL}materials/${encodeURIComponent(mat)}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}>Buka PDF</a>
                   </div>
                 ))}
               </div>
